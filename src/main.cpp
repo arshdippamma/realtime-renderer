@@ -1,42 +1,26 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <cstdio>
+#include <fstream>
+#include <sstream>
+#include <string>
 
-// Shader source strings
+std::string readFile(const char* path)
+{
+    std::ifstream file(path);
 
-const char* vertexShaderSource = R"(
-    #version 410 core
-
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec4 aColour;
-
-    out vec4 vColour;
-
-    void main() {
-        gl_Position = vec4(aPos, 1.0);
-        vColour = aColour;
+    if (!file.is_open())
+    {
+        std::fprintf(stderr, "Failed to open file: %s\n", path);
+        return "";
     }
-)";
 
-const char* fragmentShaderSource = R"(
-    #version 410 core
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
 
-    in vec4 vColour;
-
-    out vec4 fragColour;
-
-    uniform float uTime;
-
-    void main() {
-        vec3 shift = vec3(
-            sin(uTime) * 0.5 + 0.5,
-            sin(uTime + 3.0) * 0.5 + 0.5,
-            sin(uTime + 5.0) * 0.5 + 0.5
-        );
-
-        fragColour = vec4(vColour.rgb * shift, vColour.a);
-    }
-)";
+    return buffer.str();
+}
 
 int main() {
     if (!glfwInit()) {
@@ -67,9 +51,15 @@ int main() {
 
     std::printf("OpenGL version: %s\n", glGetString(GL_VERSION));
 
+    // Loading shader sources from disk
+    std::string vertexShaderSource = readFile("shaders/triangle.vert");
+    std::string fragmentShaderSource = readFile("shaders/triangle.frag");
+    const char* vertexShaderSourceCStr = vertexShaderSource.c_str();
+    const char* fragmentShaderSourceCStr = fragmentShaderSource.c_str();
+
     // Creating vertex shader object
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
+    glShaderSource(vertexShader, 1, &vertexShaderSourceCStr, nullptr);
     glCompileShader(vertexShader);
 
     // Checking if it succeeded
@@ -85,7 +75,7 @@ int main() {
 
     // Creating vertex shader object and verifying
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSourceCStr, nullptr);
     glCompileShader(fragmentShader);
 
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
