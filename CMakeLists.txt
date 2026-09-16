@@ -5,12 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(glfw3 3.3 REQUIRED)
+find_package(glm REQUIRED)
 
 add_library(glad STATIC external/glad/src/gl.c)
 target_include_directories(glad PUBLIC external/glad/include)
 
 add_executable(renderer src/main.cpp)
-target_link_libraries(renderer PRIVATE glfw glad)
+target_link_libraries(renderer PRIVATE glfw glad glm::glm)
 
 if(APPLE)
     target_link_libraries(renderer PRIVATE

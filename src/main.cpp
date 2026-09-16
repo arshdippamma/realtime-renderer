@@ -4,6 +4,9 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 std::string readFile(const char* path)
 {
@@ -132,6 +135,10 @@ int main() {
     // Time
     GLint uTimeLocation = glGetUniformLocation(shaderProgram, "uTime");
 
+    GLint uModelLocation = glGetUniformLocation(shaderProgram, "uModel");
+    GLint uViewLocation = glGetUniformLocation(shaderProgram, "uView");
+    GLint uProjectionLocation = glGetUniformLocation(shaderProgram, "uProjection");
+
     // Render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -142,6 +149,14 @@ int main() {
 
         float time = (float)glfwGetTime();
         glUniform1f(uTimeLocation, time);
+
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
+
+        glUniformMatrix4fv(uModelLocation, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(uViewLocation, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(uProjectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
