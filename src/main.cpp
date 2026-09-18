@@ -113,9 +113,40 @@ int main() {
     glDeleteShader(fragmentShader);
 
     float vertices[] = {
-        -0.7f, 0.05f, 0.3f, 0.2f, 0.7f, 0.9f, 1.0f,
-        -0.1f, 0.5f, -0.4f, 0.1f, 0.6f, 0.1f, 1.0f,
-        0.5f, 0.2f, 0.0f, 1.0f, 0.3f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.7f, 0.2f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.1f, 1.0f, 0.9f, 1.0f,
+        -0.5f, 0.5f, -0.5f, 0.7f, 0.8f, 0.2f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.1f, 1.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 0.6f, 0.6f, 0.8f, 1.0f,
+        0.5f, 0.5f, -0.5f, 0.4f, 0.7f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 0.2f, 0.0f, 1.0f, 1.0f
+    };
+
+    unsigned int indices[] = {
+        // Front
+        1, 3, 5,
+        3, 5, 7,
+
+        // Back
+        0, 2, 4,
+        2, 4, 6,
+
+        // Top
+        2, 3, 7,
+        2, 6, 7,
+
+        // Bottom
+        0, 1, 4,
+        1, 4, 5,
+
+        // Left
+        0, 1, 2,
+        1, 2, 3,
+
+        // Right
+        4, 5, 7,
+        4, 6, 7
     };
 
     GLuint VAO;
@@ -126,6 +157,11 @@ int main() {
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    GLuint EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -139,11 +175,13 @@ int main() {
     GLint uViewLocation = glGetUniformLocation(shaderProgram, "uView");
     GLint uProjectionLocation = glGetUniformLocation(shaderProgram, "uProjection");
 
+    glEnable(GL_DEPTH_TEST);
+
     // Render loop
     while (!glfwWindowShouldClose(window))
     {
         glClearColor(0.1f, 0.15f, 0.25f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
 
@@ -159,7 +197,7 @@ int main() {
         glUniformMatrix4fv(uProjectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(indices[0]), GL_UNSIGNED_INT, nullptr);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
