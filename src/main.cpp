@@ -177,6 +177,15 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
+    // Camera directions
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); // Front is -Z (camera is at Z = 3 and looks to object at origin)
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); // Up is +Y
+
+    float lastFrame = 0.0f;
+
+    float speed = 2.5f;
+
     // Render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -188,10 +197,34 @@ int main() {
         float time = (float)glfwGetTime();
         glUniform1f(uTimeLocation, time);
 
+        float deltaTime = time - lastFrame;
+
+        lastFrame = time;
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        {
+            cameraPos.z -= speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        {
+            cameraPos.x -= speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        {
+            cameraPos.z += speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        {
+            cameraPos.x += speed * deltaTime;
+        }
+
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::rotate(model, time * 1.7f, glm::vec3(1.0f, 0.0f, 0.0f));
 
-        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
         glUniformMatrix4fv(uModelLocation, 1, GL_FALSE, glm::value_ptr(model));
