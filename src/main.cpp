@@ -182,7 +182,7 @@ int main() {
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); // Front is -Z (camera is at Z = 3 and looks to object at origin)
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); // Up is +Y
 
-    float lastFrame = 0.0f;
+    float lastFrame = (float)glfwGetTime();
 
     float speed = 2.5f;
 
@@ -201,24 +201,32 @@ int main() {
 
         lastFrame = time;
 
+        // Calculating right side of camera using cross product of front and up directions of camera
+        glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, cameraUp));
+
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
         {
-            cameraPos.z -= speed * deltaTime;
+            cameraPos += cameraFront * speed * deltaTime;
         }
 
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         {
-            cameraPos.x -= speed * deltaTime;
+            cameraPos -= cameraRight * speed * deltaTime;
         }
 
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
         {
-            cameraPos.z += speed * deltaTime;
+            cameraPos -= cameraFront * speed * deltaTime;
         }
 
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
         {
-            cameraPos.x += speed * deltaTime;
+            cameraPos += cameraRight * speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        {
+            glfwSetWindowShouldClose(window, true);
         }
 
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
