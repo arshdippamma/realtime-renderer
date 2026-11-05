@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
 
 std::string readFile(const char* path)
 {
@@ -177,6 +178,26 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
+    // Camera directions
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); // Front is -Z (camera is at Z = 3 and looks to object at origin)
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); // Up is +Y
+
+    float yaw = -90.0f;
+    float pitch = 0.0f;
+    double currentX = 0.0f;
+    double currentY = 0.0f;
+    double lastX = 0.0f;
+    double lastY = 0.0f;
+    float sensitivity = 0.1f;
+
+    float lastFrame = (float)glfwGetTime();
+
+    float speed = 2.5f;
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwGetCursorPos(window, &lastX, &lastY);
+
     // Render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -188,10 +209,60 @@ int main() {
         float time = (float)glfwGetTime();
         glUniform1f(uTimeLocation, time);
 
+        float deltaTime = time - lastFrame;
+
+        lastFrame = time;
+
+        glfwGetCursorPos(window, &currentX, &currentY);
+
+        double offsetX = currentX - lastX;
+        double offsetY = lastY - currentY;
+
+        lastX = currentX;
+        lastY = currentY;
+
+        yaw += offsetX * sensitivity;
+        pitch += offsetY * sensitivity;
+        pitch = std::clamp(pitch, -89.0f, 89.0f); // Camera vertical rotation
+
+        cameraFront = glm::normalize(glm::vec3(
+                glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch)),
+                glm::sin(glm::radians(pitch)),
+                glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch))
+            ));
+
+        // Calculating right side of camera using cross product of front and up directions of camera
+        glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, cameraUp));
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        {
+            cameraPos += cameraFront * speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        {
+            cameraPos -= cameraRight * speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        {
+            cameraPos -= cameraFront * speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        {
+            cameraPos += cameraRight * speed * deltaTime;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        {
+            glfwSetWindowShouldClose(window, true);
+        }
+
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::rotate(model, time * 1.7f, glm::vec3(1.0f, 0.0f, 0.0f));
 
-        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
         glUniformMatrix4fv(uModelLocation, 1, GL_FALSE, glm::value_ptr(model));
