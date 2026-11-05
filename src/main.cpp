@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
 
 std::string readFile(const char* path)
 {
@@ -182,9 +183,20 @@ int main() {
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); // Front is -Z (camera is at Z = 3 and looks to object at origin)
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); // Up is +Y
 
+    float yaw = -90.0f;
+    float pitch = 0.0f;
+    double currentX = 0.0f;
+    double currentY = 0.0f;
+    double lastX = 0.0f;
+    double lastY = 0.0f;
+    float sensitivity = 0.1f;
+
     float lastFrame = (float)glfwGetTime();
 
     float speed = 2.5f;
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwGetCursorPos(window, &lastX, &lastY);
 
     // Render loop
     while (!glfwWindowShouldClose(window))
@@ -200,6 +212,24 @@ int main() {
         float deltaTime = time - lastFrame;
 
         lastFrame = time;
+
+        glfwGetCursorPos(window, &currentX, &currentY);
+
+        double offsetX = currentX - lastX;
+        double offsetY = lastY - currentY;
+
+        lastX = currentX;
+        lastY = currentY;
+
+        yaw += offsetX * sensitivity;
+        pitch += offsetY * sensitivity;
+        pitch = std::clamp(pitch, -89.0f, 89.0f); // Camera vertical rotation
+
+        cameraFront = glm::normalize(glm::vec3(
+                glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch)),
+                glm::sin(glm::radians(pitch)),
+                glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch))
+            ));
 
         // Calculating right side of camera using cross product of front and up directions of camera
         glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, cameraUp));
